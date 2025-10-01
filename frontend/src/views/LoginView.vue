@@ -3,14 +3,22 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
+// Reactive variables for the email and password fields.
 const email = ref('');
 const password = ref('');
+
+// Get the auth store and router instances.
 const authStore = useAuthStore();
 const router = useRouter();
 
+/**
+ * Handles the login form submission.
+ */
 const handleLogin = async () => {
+  // Call the login action from the auth store.
   await authStore.login(email.value, password.value);
 
+  // If login is successful (token exists), redirect to the home page.
   if (authStore.token) {
     router.push('/');
   }
@@ -19,7 +27,7 @@ const handleLogin = async () => {
 
 <template>
   <div class="back-button-container">
-  <RouterLink to="/" class="back-button" aria-label="Voltar para a Home">
+  <RouterLink to="/" class="back-button" aria-label="Back to Home">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="19" y1="12" x2="5" y2="12"></line>
       <polyline points="12 19 5 12 12 5"></polyline>

@@ -32,13 +32,13 @@ def create_user(db: Session, user: schemas.UserCreate):
     Returns:
         User: The newly created user object with generated ID
     """
-    # Hash the password for security before storing
+    # Hash the password before storing it.
     hashed_password = security.get_password_hash(user.password)
     
-    # Create new user instance with hashed password
+    # Create a new user instance.
     db_user = models.User(email=user.email, hashed_password=hashed_password)
     
-    # Add to session, commit to database, and refresh to get the ID
+    # Add, commit, and refresh the user in the database.
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

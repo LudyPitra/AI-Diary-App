@@ -1,32 +1,73 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import { useDiaryStore } from '@/stores/diary'
+
+// Create an instance of our store.
+const diaryStore = useDiaryStore();
+
+// Reactive variables for the new note's title and content.
+const newTitle = ref('');
+const newContent = ref('');
+
+/**
+ * Handles saving a new note.
+ */
+const handleSaveNote = async () => {
+  // Check if the title is not empty.
+  if (newTitle.value.trim() === '') {
+    alert('Please provide a title for your note.');
+    return;
+  }
+
+  // Call the store's action, passing the title and content.
+  await diaryStore.createEntry(newTitle.value, newContent.value);
+
+  // Clear the editor fields after saving.
+  newTitle.value = '';
+  newContent.value = '';
+};
+
+// Tell Vue to call the fetchEntries() action as soon as the component is mounted.
+onMounted(() => {
+  diaryStore.fetchEntries();
+});
+</script>
+
 <template>
-    <div class="diary-layout">
-      <!-- Coluna da Esquerda: Menu de Anotações -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h2>Minhas Anotações</h2>
-          <button class="new-entry-button">+</button>
-        </div>
-        <ul class="entry-list">
-          <!-- Placeholder: Anotações serão listadas aqui -->
-          <li class="entry-item">
-            <h3>Título da Anotação 1</h3>
-            <p>Um breve resumo do texto...</p>
-          </li>
-          <li class="entry-item active">
-            <h3>Anotação Ativa</h3>
-            <p>Esta é a anotação que está...</p>
-          </li>
-        </ul>
-      </aside>
-  
-      <!-- Coluna da Direita: Editor de Texto -->
+  <div class="diary-layout">
+    <!-- Left Column: Notes Menu -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>My Notes</h2>
+        <button class="new-entry-button">+</button>
+      </div>
+      <ul class="entry-list">
+        <li v-if="diaryStore.entries.length === 0" class="entry-item-empty">
+          No entries yet. Click '+' to create one.
+        </li>
+        <li v-for="entry in diaryStore.entries" :key="entry.id" class="entry-item">
+          <h3>{{ entry.title }}</h3>
+          <p>{{ entry.content ? entry.content.substring(0, 50) + '...' : '' }}</p>
+        </li>
+      </ul>
+    </aside>
+
+      <!-- Right Column: Text Editor -->
       <main class="main-content">
         <div class="editor-container">
-          <input type="text" class="title-input" placeholder="Dê um título à sua anotação..." />
-          <textarea class="content-textarea" placeholder="Comece a escrever aqui..."></textarea>
+          <input   v-model="newTitle" 
+            type="text" 
+            class="title-input" 
+            placeholder="Give your note a title..." 
+          />
+          <textarea 
+            v-model="newContent" 
+            class="content-textarea" 
+            placeholder="Start writing here..."
+          ></textarea>
         </div>
         <div class="editor-actions">
-          <button class="save-button">Guardar Anotação</button>
+          <button @click="handleSaveNote" class="save-button">Save Note</button>
         </div>
       </main>
     </div>
@@ -35,10 +76,10 @@
   <style scoped>
   .diary-layout {
     display: flex;
-    height: calc(100vh - 65px); /* Altura total da tela menos o header */
+    height: calc(100vh - 65px); /* Full viewport height minus header */
   }
   
-  /* --- Barra Lateral (Sidebar) --- */
+  /* --- Sidebar --- */
   .sidebar {
     width: 300px;
     background-color: #f8f9fa;
@@ -77,7 +118,7 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    overflow-y: auto; /* Adiciona scroll se a lista for longa */
+    overflow-y: auto; /* Adds scroll if the list is long */
   }
   
   .entry-item {
@@ -106,9 +147,9 @@
     color: #828282;
   }
   
-  /* --- Conteúdo Principal (Editor) --- */
+  /* --- Main Content (Editor) --- */
   .main-content {
-    flex-grow: 1; /* Ocupa todo o espaço restante */
+    flex-grow: 1; /* Occupies remaining space */
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
@@ -141,7 +182,7 @@
     flex-grow: 1;
     font-size: 1.1rem;
     line-height: 1.6;
-    resize: none; /* Impede que o usuário redimensione */
+    resize: none; /* Prevent user from resizing */
     color: #303030;
   }
   

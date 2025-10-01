@@ -52,30 +52,46 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict):
     """
-    Create a JWT access token.
+    Create a JWT access token with an expiration time.
+
+    Args:
+        data (dict): The data to encode in the token (e.g., user identifier).
+
+    Returns:
+        str: The encoded JWT access token.
     """
 
     to_encode = data.copy()
+    # Set the token expiration time.
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
+    # Encode the token with the secret key and algorithm.
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 def get_current_user(db: Session, token: str):
     """
-    Get the email of the current user from the JWT token.
+    Decode a JWT token to retrieve the current user.
+
+    Args:
+        db (Session): The database session.
+        token (str): The JWT access token.
+
+    Returns:
+        User | None: The user object if the token is valid and the user exists, otherwise None.
     """
     try:
+        # Decode the JWT to get the payload.
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-
+        # Extract the email (subject) from the payload.
         email: str = payload.get("sub")
-        
         if email is None:
             return None
-        
     except JWTError:
+        # Return None if the token is invalid or expired.
         return None
     
+    # Retrieve the user from the database.
     user = crud.get_user_by_email(db=db, email=email)
     
     return user

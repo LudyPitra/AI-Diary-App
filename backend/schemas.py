@@ -46,9 +46,9 @@ class Entry(EntryBase):
     id: int
     created_at: datetime
     owner_id: int
-    
+
     class Config:
-        # Enable ORM mode to work with SQLAlchemy models
+        """Pydantic configuration to allow ORM mode."""
         from_attributes = True
 
 
@@ -90,11 +90,12 @@ class User(UserBase):
     id: int
     is_active: bool
     entries: List[Entry] = []
-    
+
     class Config:
-        # Enable ORM mode to work with SQLAlchemy models
+        """Pydantic configuration to allow ORM mode."""
         from_attributes = True
 
 class TokenRequest(BaseModel):
+    """Schema for requesting a token with email and password."""
     email: str
     password: str

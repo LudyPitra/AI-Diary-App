@@ -8,6 +8,7 @@ import DiaryView from '../views/DiaryView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  // Defines the application's routes.
   routes: [
     {
       path: '/',
@@ -25,20 +26,23 @@ const router = createRouter({
       path: '/diary',
       name: 'diary',
       component: DiaryView,
+      // This route requires authentication.
       meta: { requiresAuth: true }
     }
   ]
 })
 
+// Navigation guard to protect authenticated routes.
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  const requiresAuth = to.meta.requiresAuth
+  const authStore = useAuthStore();
+  const requiresAuth = to.meta.requiresAuth;
 
+  // Redirect to login if the route requires auth and the user is not authenticated.
   if (requiresAuth && !authStore.token) {
-    next({ name: 'login' })
+    next({ name: 'login' });
   } else {
-    next()
+    next();
   }
-})
+});
 
 export default router

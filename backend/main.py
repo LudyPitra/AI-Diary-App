@@ -5,7 +5,7 @@ and defines the main API endpoints for the diary application.
 """
 
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
@@ -21,10 +21,28 @@ app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+origins = [
+    "http://localhost:5173",  # The frontend URL for development
+    "http://127.0.0.1:5173",  # Common variant of localhost
+]
+def get_db():
+    """
+    Dependency to get a database session.
+    Ensures the session is closed after the request.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
+    """
+    Dependency to get the current authenticated user from a JWT token.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -38,28 +56,18 @@ async def get_current_user(
     
     return user
 
-origins = [
-    "http://localhost:5173", # A URL do front-end em desenvolvimento
-    "http://127.0.0.1:5173", # Variante comum do host local
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # Lista de origens que podem fazer requisições
+    allow_origins=origins,  # List of origins that are allowed to make requests
     allow_credentials=True,
-    allow_methods=["*"], # Permite todos os métodos (GET, POST, etc)
-    allow_headers=["*"], # Permite todos os cabeçalhos
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
 )
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
         
 @app.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Create a new user."""
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -67,10 +75,12 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/token")
 def login_for_access_token(
-    request_data: schemas.TokenRequest, db: Session = Depends(get_db)
-    ):
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    """Login user to get an access token."""
     
-    user = crud.authenticate_user(db, email=request_data.email, password=request_data.password)
+    user = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
 
     if not user:
         raise HTTPException(
@@ -103,7 +113,8 @@ def read_root():
 def read_entries(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
-    ):
+):
+    """Fetch all diary entries for the current user."""
     entries = crud.get_entries(db=db, user_id=current_user.id)
     return entries
 
@@ -112,5 +123,6 @@ def create_entry(
     entry: schemas.EntryCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
-    ):
+):
+    """Create a new diary entry for the current user."""
     return crud.create_user_entry(db=db, entry=entry, user_id=current_user.id)
